@@ -1,3 +1,4 @@
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:           dfw
 # Required-Start:     $local_fs $remote_fs
