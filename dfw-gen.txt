@@ -1,0 +1,18 @@
+NAME
+  dfw-gen - generate rulesets for iptables
+SYNOPSIS
+  dfw-gen [-h] [-c|--cfg-file CFG_FILE]
+DESCRIPTION
+  dfw-gen generates iptables rulesets from rules files residing in multiple
+  directories. They are categorized by table and chain and sorted lexically.
+  If _no_ rules files exist, the default policies are chosen to allow all
+  outbound connections, but forbid any inbound connections (including ping).
+OPTIONS
+  -h      Display a short help message.
+  -c      Use a specific configuration file instead of the default.
+EXAMPLE
+  $ dfw-gen > ipt.rules
+SEE ALSO
+  iptables(8)
+AUTHOR
+  Daniel Edwards <dev@danieledwards.de>
