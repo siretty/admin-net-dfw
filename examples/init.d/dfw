@@ -1,0 +1,64 @@
+### BEGIN INIT INFO
+# Provides:           dfw
+# Required-Start:     $local_fs $remote_fs
+# Required-Stop:      $local_fs $remote_fs
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Load, save and generate iptables rules.
+# Description:        Load, save and generate iptables rules.
+### END INIT INFO
+
+RULES_FILE="/var/lib/dfw.rules"
+
+dfw_gen=/usr/bin/dfw-gen
+ipts=/usr/sbin/iptables-save
+iptr=/usr/sbin/iptables-restore
+
+function generate( ) {
+    $dfw_gen > "$RULES_FILE"
+    log_success_msg "generated firewall ruleset"
+}
+
+function start( ) {
+    if [ -f "$RULES_FILE" ] ; then
+        $iptr < "$RULES_FILE"
+    else
+        log_warning_msg "unable to load rules: rules file doesn't exist"
+        generate
+        $iptr < "$RULES_FILE"
+    fi
+    log_success_msg "loaded firewall ruleset"
+}
+
+function stop( ) {
+    $ipts > "$RULES_FILE"
+    log_success_msg "saved firewall ruleset"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start       
+        ;;
+    force-reload)
+        log_success_msg "force reload"
+        ;;
+    status)
+        log_success_msg "status"
+        ;;
+    generate)
+        generate
+        ;;
+    *)
+        echo "/etc/init.d/dfw start|stop|restart|force-reload|status|generate"
+        exit 1
+        ;;
+esac
+
+exit 0
