@@ -1,0 +1,1 @@
+--protocol tcp --dport ssh --jump ACCEPT

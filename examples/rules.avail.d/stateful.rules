@@ -1,0 +1,2 @@
+--match conntrack --ctstate RELATED,ESTABLISHED --jump ACCEPT
+--match conntrack --ctstate INVALID --jump DROP
