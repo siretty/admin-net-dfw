@@ -10,6 +10,6 @@ install:
 	install -d $(DESTDIR)/etc/dfw/rules.avail.d
 	install -d $(DESTDIR)/usr/bin
 	install -m 755 examples/init.d/dfw   $(DESTDIR)/etc/init.d/dfw
-	install -m 755 examples/dfwrc        $(DESTDIR)/etc/dfw/dfwrc
+	install -m 644 examples/dfwrc        $(DESTDIR)/etc/dfw/dfwrc
 	install -m 644 dfw-gen               $(DESTDIR)/usr/bin/dfw-gen
 
