@@ -18,5 +18,5 @@ install:
 	install -m 755 examples/init.d/dfw   $(DESTDIR)/etc/init.d/dfw
 	install -m 644 examples/dfwrc        $(DESTDIR)/etc/dfw/dfwrc
 	install -m 644 dfw-gen               $(DESTDIR)/usr/bin/dfw-gen
-	install -m 644 dfg-gwn.1.gz	     $(DESTDIR)/usr/local/share/man/man1
+	install -m 644 dfg-gen.1.gz	     $(DESTDIR)/usr/local/share/man/man1
 
