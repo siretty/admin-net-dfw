@@ -1,4 +1,4 @@
 {   "rule_directories": [
-        "./examples/rules.system.d", "./examples/rules.local.d"
+        "/etc/dfw/rules.system.d", "/etc/dfw/rules.local.d"
     ]
 }
