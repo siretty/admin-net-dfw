@@ -215,8 +215,18 @@ def read_dfwrc( path ):
     return default_cfg
 
 
+import argparse
+
+
 def main( argv ):
-    cfg = read_dfwrc( './examples/dfwrc' )
+    parser = argparse.ArgumentParser( )
+    parser.add_argument( '-c', '--cfg-file',
+        dest = 'cfg_file', default = '/etc/dfw/dfwrc',
+        help = 'specify a configuration file (default: /etc/dfw/dfwrc)'
+    )
+    args = parser.parse_args( argv[1:] )
+
+    cfg = read_dfwrc( args.cfg_file )
 
     rule_files = [ ]
     for rule_dir in cfg['rule_directories']:
