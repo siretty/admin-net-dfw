@@ -2,7 +2,7 @@ all: doc
 
 doc:
 	rm -f dfw-gen.1 dfw-gen.1.gz
-	./txt2man < dfw-gen.txt > dfw-gen.1
+	./txt2man -t dfw-gen -s 1 < dfw-gen.txt > dfw-gen.1
 	gzip dfw-gen.1
 
 clean:
