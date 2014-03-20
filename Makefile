@@ -1,4 +1,4 @@
-all:
+all: doc
 
 doc:
 	rm -f dfw-gen.1 dfw-gen.1.gz
