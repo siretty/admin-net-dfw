@@ -1,0 +1,233 @@
+#!/usr/bin/env python2
+
+from __future__ import print_function
+
+import os, os.path, subprocess, operator, json
+
+
+def scan_rules_directory( path ):
+    """Scans a rules directory and returns a list of dictionaries
+    containing information about a rule file.
+    """
+    rules = [ ]
+
+    for table_name in os.listdir( path ):
+        table_path = os.path.join( path, table_name )
+
+        if not os.path.isdir( table_path ): continue
+
+        for chain_name in os.listdir( table_path ):
+            chain_path = os.path.join( table_path, chain_name )
+
+            if not os.path.isdir( chain_path ): continue
+
+            for file_name in os.listdir( chain_path ):
+                file_path = os.path.join( chain_path, file_name )
+
+                rule = {
+                    'type': None,
+                    'names': ( table_name, chain_name, file_name ),
+                    'paths': ( table_path, chain_path, file_path ),
+                }
+
+                if file_name == "policy":
+                    # default policy (will cause anything ONLY for
+                    # iptables policies)
+                    # CURRENTLY NOT USED
+                    rule['type'] = 'pr'
+                    rules.append( rule )
+                elif os.path.splitext( file_name )[1] == '.rules':
+                    # rule files
+                    if os.access( file_path, os.X_OK ):
+                        # generated rules
+                        rule['type'] = 'rx'
+                        rules.append( rule )
+                    else:
+                        # static rules
+                        rule['type'] = 'rr'
+                        rules.append( rule )
+
+    return rules
+
+
+def format_table_prev( table_name ):
+    return [
+        "*{0}\n".format( table_name ),
+    ]
+
+def format_chain( chain_name, policy ):
+    return [
+        ":{0} {1} [0:0]\n".format( chain_name, policy ),
+    ]
+
+def format_lines( rule, lines ):
+    lines_out = [ ]
+    for line in lines:
+        stripped = line.strip( )
+        if len( stripped ) > 0 and not stripped.startswith( '#' ):
+            line = '--append ' + rule['names'][1] + ' ' + line + '\n'
+        lines_out.append( line )
+    return lines_out
+
+def format_table_post( table_name ):
+    return [
+        "COMMIT\n",
+    ]
+
+
+def read_static( rule ):
+    lines = [ ]
+    lines.append( '## FILE ## BEG ## R ## {0}\n'.format( rule['paths'][2] ) )
+
+    with open( rule['paths'][2] ) as f:
+        content = f.read( ).decode( ).strip( '\n' ).split( '\n' )
+        lines.extend(
+            format_lines( rule, content )
+        )
+
+    lines.append( '## FILE ## END ## R ##\n' )
+    return lines
+
+def read_generator( rule ):
+    output = [ ]
+    output.append( '## FILE ## BEG ## X ## {0}\n'.format( rule['paths'][2] ) )
+
+    content = [ ]
+
+    try:
+        cmd_output = subprocess.check_output( rule['paths'][2] ).decode( )
+        cmd_output = cmd_output.strip( '\n' ).split( '\n' )
+        content.extend( cmd_output )
+    except subprocess.CalledProcessError as e:
+        content.append(
+            "# command exited with code {0}:\n".format( e.returncode )
+        )
+        cmd_output = e.output.decode( ).strip( '\n' ).split( '\n' )
+        content.extend( [ '# ' + l for l in cmd_output ] )
+    except OSError as e:
+        content.append(
+            "# command could not be executed ({0}): {1}\n".format(
+                e.errno, e.strerror
+            )
+        )
+
+    output.extend(
+        format_lines( rule, content )
+    )
+
+    output.append( '## FILE ## END ## X ##\n' )
+    return output
+
+
+default_policies = {
+    'filter': {
+        'INPUT': 'DROP',
+        'OUTPUT': 'ACCEPT',
+        'FORWARD': 'DROP',
+    },
+    'nat': {
+        'PREROUTING': 'ACCEPT',
+        'POSTROUTING': 'ACCEPT',
+        'OUTPUT': 'ACCEPT',
+    },
+    'mangle': {
+        'PREROUTING': 'ACCEPT',
+        'INPUT': 'ACCEPT',
+        'OUTPUT': 'ACCEPT',
+        'FORWARD': 'ACCEPT',
+        'POSTROUTING': 'ACCEPT',
+    },
+}
+
+def get_policy( table_name, chain_name ):
+    if table_name in default_policies:
+        if chain_name in default_policies[table_name]:
+            return default_policies[table_name][chain_name]
+
+    # default is no policy
+    return ''
+
+
+def classify_rule_files( rule_files ):
+    rules = { }
+
+    for table_name, table in default_policies.items( ):
+        rules[table_name] = { }
+        for chain_name, policy in table.items( ):
+            rules[table_name][chain_name] = [ ]
+
+    for rule in rule_files: 
+        # select table (add if it doesn't exist)
+        if rule['names'][0] not in rules:
+            rules[rule['names'][0]] = { }
+        table = rules[rule['names'][0]]
+
+        # add chain (add if it doesn't exist)
+        if rule['names'][1] not in table:
+            table[rule['names'][1]] = [ ]
+        chain = table[rule['names'][1]]
+
+        # add the rule
+        chain.append( rule )
+
+    return rules
+
+def read_rules( rules ):
+    lines = [ ]
+
+    for table_name, chains in rules.items( ):
+        lines.extend( format_table_prev( table_name ) )
+
+        # create chains
+        for chain_name in chains.keys( ):
+            lines.extend(
+                format_chain(
+                    chain_name, get_policy( table_name, chain_name )
+                )
+            )
+
+        # print rules
+        for chain_name, rule_list in chains.items( ):
+            # sort rules by filename
+            rule_list.sort( key = operator.itemgetter( 'names' ) )
+
+            for rule in rule_list:
+                read_fun = None
+                if    rule['type'] == 'rr': read_fun = read_static
+                elif  rule['type'] == 'rx': read_fun = read_generator
+
+                lines.extend( read_fun( rule ) )
+
+        lines.extend( format_table_post( table_name ) )
+
+    return lines
+
+
+default_cfg = {
+    "rule_directories": [
+        "/etc/dfw/rules.d", "/etc/dfw/rules.local.d",
+    ],
+}
+
+def read_dfwrc( path ):
+    with open( path, 'r' ) as f:
+        return json.load( f )
+    return default_cfg
+
+
+def main( argv ):
+    cfg = read_dfwrc( './examples/dfwrc' )
+
+    rule_files = [ ]
+    for rule_dir in cfg['rule_directories']:
+        rule_files.extend( scan_rules_directory( rule_dir ) )
+
+    rules = classify_rule_files( rule_files )
+    lines = read_rules( rules )
+
+    sys.stdout.writelines( lines )
+
+if __name__ == "__main__":
+    import sys
+    main( sys.argv )
+
