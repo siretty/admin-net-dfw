@@ -1,0 +1,4 @@
+{   "rule_directories": [
+        "./examples/rules.system.d", "./examples/rules.local.d"
+    ]
+}
