@@ -3,6 +3,7 @@ all:
 clean:
 
 install:
+	install -d $(DESTDIR)/etc/init.d
 	install -d $(DESTDIR)/etc/dfw
 	install -d $(DESTDIR)/etc/dfw/rules.system.d
 	install -d $(DESTDIR)/etc/dfw/rules.local.d
