@@ -1,12 +1,13 @@
 all:
 
 doc:
+	rm -f dfw-gen.1 dfw-gen.1.gz
 	./txt2man < dfw-gen.txt > dfw-gen.1
 	gzip dfw-gen.1
 
 clean:
 
-install: doc
+install:
 	install -d $(DESTDIR)/etc/init.d
 	install -d $(DESTDIR)/etc/dfw
 	install -d $(DESTDIR)/etc/dfw/rules.system.d
