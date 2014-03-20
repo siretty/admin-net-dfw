@@ -15,6 +15,8 @@ dfw_gen=/usr/bin/dfw-gen
 ipts=/usr/sbin/iptables-save
 iptr=/usr/sbin/iptables-restore
 
+. /lib/lsb/init-functions
+
 function generate( ) {
     $dfw_gen > "$RULES_FILE"
     log_success_msg "generated firewall ruleset"
