@@ -12,8 +12,8 @@
 RULES_FILE="/var/lib/dfw.rules"
 
 dfw_gen=/usr/bin/dfw-gen
-ipts=/usr/sbin/iptables-save
-iptr=/usr/sbin/iptables-restore
+ipts=/sbin/iptables-save
+iptr=/sbin/iptables-restore
 
 . /lib/lsb/init-functions
 
