@@ -5,8 +5,33 @@ SYNOPSIS
 DESCRIPTION
   dfw-gen generates iptables rulesets from rules files residing in multiple
   directories. They are categorized by table and chain and sorted lexically.
+
   If _no_ rules files exist, the default policies are chosen to allow all
   outbound connections, but forbid any inbound connections (including ping).
+
+  The usual directory for configuration files is /etc/dfw. The default
+  configurationfile is /etc/dfw/dfwrc, it's format is json.
+
+  The directory layout of a rule directory (like /etc/dfw/rules.local.d) is
+  * First-level directories are table names
+  * Second-level directories are chain names
+
+  Rule files are put into the second level directories (chain directories)
+  * Only files with the ".rules" extension are considered as rules files.
+  * If a ".rules" file is executable it is called with the table chain and
+    file name as first, second and third command line argument, and it's
+    output on stdout is used as a rules file.
+  
+  A rule file has the following format:
+  * Lines starting with "#" (leading whitespace is ignored) are comments.
+  * Empty lines or lines containing only whitespace are ignored.
+  * All other lines are considered to be tables and are _copied_ to the
+    resulting ruleset.
+  * You must not prefix every rule with the table and chain name, these are
+    automatically prepended, being taken from the directory layout.
+
+  All specified rule directories (in the configuration file) are read,
+  the rule files for a certain chain are sorted lexically.
 OPTIONS
   -h      Display a short help message.
   -c      Use a specific configuration file instead of the default.
