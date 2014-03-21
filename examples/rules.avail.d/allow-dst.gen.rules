@@ -1,0 +1,20 @@
+#!/bin/bash
+
+table="$1"
+chain="$2"
+fname="$3"
+
+regex='^([0-9]+-)?allow-dst-(tcp|udp)-([0-9a-zA-Z]+)[.].*$'
+
+if [[ $fname =~ $regex ]] ; then
+    # \1: protocol (tcp or udp)
+    # \2: (named) port
+    protocol=${BASH_REMATCH[2]}
+    port=${BASH_REMATCH[3]}
+    echo "--protocol $protocol --dport $port --jump ACCEPT"
+else
+    echo "# error: filename \"$fname\" must match \"$regex\""
+    exit 1
+fi
+
+exit 0

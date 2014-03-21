@@ -95,7 +95,8 @@ def read_generator( rule ):
     content = [ ]
 
     try:
-        cmd_output = subprocess.check_output( rule['paths'][2] ).decode( )
+        cmd = [ rule['paths'][2] ] + [ r for r in rule['names'] ]
+        cmd_output = subprocess.check_output( cmd ).decode( )
         cmd_output = cmd_output.strip( '\n' ).split( '\n' )
         content.extend( cmd_output )
     except subprocess.CalledProcessError as e:
