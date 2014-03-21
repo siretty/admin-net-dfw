@@ -4,7 +4,7 @@ table="$1"
 chain="$2"
 fname="$3"
 
-regex='^([0-9]+-)?allow-dst-(tcp|udp)-([0-9a-zA-Z]+)[.].*$'
+regex='^([0-9]+-)?allow-dst-(tcp|udp)-([^.]+)[.].*$'
 
 if [[ $fname =~ $regex ]] ; then
     # \1: protocol (tcp or udp)
