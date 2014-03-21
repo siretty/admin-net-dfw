@@ -1,3 +1,7 @@
+BINDIR=$(DESTDIR)/usr/bin
+ETCDIR=$(DESTDIR)/etc
+DATDIR=$(DESTDIR)/usr/share
+
 all: doc
 
 doc:
@@ -8,18 +12,20 @@ doc:
 clean:
 
 install:
-	install -d $(DESTDIR)/etc/init.d
-	install -d $(DESTDIR)/etc/dfw
-	install -d $(DESTDIR)/etc/dfw/rules.system.d
-	install -d $(DESTDIR)/etc/dfw/rules.local.d
-	install -d $(DESTDIR)/etc/dfw/rules.avail.d
-	install -d $(DESTDIR)/etc/dfw/rules.avail.d/filter/INPUT
-	install -d $(DESTDIR)/usr/bin
-	install -d $(DESTDIR)/usr/share/man/man1
-	install -m 755 examples/init.d/dfw   $(DESTDIR)/etc/init.d/dfw
-	install -m 644 examples/dfwrc        $(DESTDIR)/etc/dfw/dfwrc
-	install -m 644 examples/rules.avail.d/*.rules $(DESTDIR)/etc/dfw/rules.avail.d
-	install -m 644 examples/rules.avail.d/filter/INPUT/*.rules $(DESTDIR)/etc/dfw/rules.avail.d/filter/INPUT
-	install -m 644 dfw-gen               $(DESTDIR)/usr/bin/dfw-gen
-	install -m 644 dfw-gen.1.gz	     $(DESTDIR)/usr/share/man/man1/dfw-gen.1.gz
+	install -d $(BINDIR)
+	install -d $(ETCDIR)/init.d
+	install -d $(ETCDIR)/dfw/rules.avail.d $(ETCDIR)/dfw/rules.system.d $(ETCDIR)/dfw/rules.local.d $(ETCDIR)/dfw/rules.local.d/filter/INPUT
+	install -d $(DATDIR)/man/man1
+	
+	install -m 755 examples/init.d/dfw   $(ETCDIR)/init.d/dfw
+	install -m 644 examples/dfwrc        $(ETCDIR)/dfw/dfwrc
+	install -m 755 `find examples/rules.avail.d -name '*.gen.rules'` $(ETCDIR)/dfw/rules.avail.d
+	install -m 644 `find examples/rules.avail.d -name '*.rules' -not -name '*.gen.rules'` $(ETCDIR)/dfw/rules.avail.d
+	install -m 644 dfw-gen      $(BINDIR)/dfw-gen
+	install -m 644 dfw-gen.1.gz $(DATDIR)/man/man1/dfw-gen.1.gz
+	
+	# default rule files
+	ln -s ../../../rules.avail.d/stateful.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/10-stateful.rules
+	ln -s ../../../rules.avail.d/allow-dst.gen.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/40-allow-dst-tcp-ssh.rules
+	ln -s ../../../rules.avail.d/allow-icmp-ping.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/40-allow-icmp-ping.rules
 
