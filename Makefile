@@ -28,4 +28,5 @@ install:
 	ln -s ../../../rules.avail.d/stateful.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/10-stateful.rules
 	ln -s ../../../rules.avail.d/allow-dst.gen.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/40-allow-dst-tcp-ssh.rules
 	ln -s ../../../rules.avail.d/allow-icmp-ping.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/40-allow-icmp-ping.rules
+	ln -s ../../../rules.avail.d/allow-inp-lo.rules $(ETCDIR)/dfw/rules.local.d/filter/INPUT/11-allow-lo.rules
 
