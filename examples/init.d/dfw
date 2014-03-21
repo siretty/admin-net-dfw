@@ -20,25 +20,10 @@ iptr=/sbin/iptables-restore
 . /lib/lsb/init-functions
 
 
-function generate( ) {
-    $dfw_gen > "$RULES_FILE"
-    log_success_msg "generated firewall ruleset"
-}
+function default( ) {
+    log_progress_msg "["
+    log_progress_msg "default"
 
-function start( ) {
-    if [ -f "$RULES_FILE" ] ; then
-        $iptr -c < "$RULES_FILE"
-    else
-        log_warning_msg "unable to load rules: rules file doesn't exist"
-        generate
-        $iptr < "$RULES_FILE"
-    fi
-    log_success_msg "loaded firewall ruleset"
-}
-
-function stop( ) {
-    # save the current ruleset
-    $ipts -c > "$RULES_FILE"
     # find all tables
     local tables=$(iptables-save | sed -n 's_^\*\(.\+\)_\1_p')
     # delete all rules in all tables and reset policies
@@ -51,6 +36,75 @@ function stop( ) {
             iptables -t "$table" -P "$chain" ACCEPT
         done
     done
+
+    log_progress_msg "]"
+}
+
+function generate( ) {
+    local RET="1"
+
+    log_progress_msg "["
+    log_progress_msg "generate"
+
+    $dfw_gen > "$RULES_FILE" ; RET="$?"
+    if [ "$RET" != "0" ] ; then
+        log_progress_msg "fail"
+    fi
+
+    log_progress_msg "]"
+
+    if [ "$RET" == "0" ] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function start( ) {
+    local RET="1"
+
+    log_progress_msg "["
+    log_progress_msg "start"
+
+    if [ -f "$RULES_FILE" ] ; then
+        $iptr -c < "$RULES_FILE" ; RET="$?"
+    else
+        if generate ; then
+            $iptr < "$RULES_FILE" ; RET="$?"
+        else
+            # load default rules
+            default
+        fi
+    fi
+
+    log_progress_msg "]"
+
+    if [ "$RET" == "0" ] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function stop( ) {
+    local RET="1"
+
+    log_progress_msg "["
+    log_progress_msg "stop"
+
+    # save the current ruleset
+    $ipts -c > "$RULES_FILE" ; RET="$?"
+
+    # load default rules
+    default
+
+    log_progress_msg "]"
+
+    if [ "$RET" == "0" ] ; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 
@@ -60,27 +114,42 @@ function locked( ) {
     (
       flock -x 99 || exit 1
       eval "$*"
+      exit "$?"
     ) 99>$_lockfile
+
+    local _returncode="$?"
+
+    if [ "$_returncode" == "0" ] ; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 case "$1" in
     start)
+        log_daemon_msg "Starting Firewall" "dfw"
         locked $LOCKFILE  start
-        log_success_msg "iptables firewall started"
+        log_end_msg "$?"
         ;;
     stop)
+        log_daemon_msg "Stopping Firewall" "dfw"
         locked $LOCKFILE  stop
-        log_success_msg "iptables firewall stopped"
+        log_end_msg "$?"
         ;;
     restart)
+        log_daemon_msg "Restarting Firewall" "dfw"
         locked $LOCKFILE  "stop ; start"
+        log_end_msg "$?"
         ;;
     force-reload)
         ;;
     status)
         ;;
     generate)
+        log_daemon_msg "Generating Firewall Rules" "dfw"
         locked $LOCKFILE  "stop ; generate ; start"
+        log_end_msg "$?"
         ;;
     *)
         echo "/etc/init.d/dfw start|stop|restart|force-reload|status|generate"
