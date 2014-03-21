@@ -144,7 +144,8 @@ def get_policy( table_name, chain_name ):
         if chain_name in default_policies[table_name]:
             return default_policies[table_name][chain_name]
 
-    # default is no policy
+    # the default_policies table includes all predefined chains, so
+    # for all other chains we return '' as the policy
     return ''
 
 
