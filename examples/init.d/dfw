@@ -42,12 +42,12 @@ function stop( ) {
     # find all tables
     local tables=$(iptables-save | sed -n 's_^\*\(.\+\)_\1_p')
     # delete all rules in all tables and reset policies
-    for table in "$tables" ; do
+    for table in $tables ; do
         iptables -t "$table" -F
         iptables -t "$table" -X
         iptables -t "$table" -Z
         local chains=$(iptables-save -t "$table" | sed -n 's_^:\([^ \t]\+\).*_\1_p')
-        for chain in "$chains" ; do
+        for chain in $chains ; do
             iptables -t "$table" -P "$chain" ACCEPT
         done
     done
