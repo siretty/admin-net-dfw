@@ -27,7 +27,7 @@ function generate( ) {
 
 function start( ) {
     if [ -f "$RULES_FILE" ] ; then
-        $iptr < "$RULES_FILE"
+        $iptr -c < "$RULES_FILE"
     else
         log_warning_msg "unable to load rules: rules file doesn't exist"
         generate
@@ -38,7 +38,7 @@ function start( ) {
 
 function stop( ) {
     # save the current ruleset
-    $ipts > "$RULES_FILE"
+    $ipts -c > "$RULES_FILE"
     # find all tables
     local tables=$(iptables-save | sed -n 's_^\*\(.\+\)_\1_p')
     # delete all rules in all tables and reset policies
