@@ -9,13 +9,16 @@
 # Description:        Load, save and generate iptables rules.
 ### END INIT INFO
 
+# file where iptables rules are saved
 RULES_FILE="/var/lib/dfw.rules"
+LOCKFILE="/var/lock/dfw-init"
 
 dfw_gen=/usr/bin/dfw-gen
 ipts=/sbin/iptables-save
 iptr=/sbin/iptables-restore
 
 . /lib/lsb/init-functions
+
 
 function generate( ) {
     $dfw_gen > "$RULES_FILE"
@@ -34,29 +37,50 @@ function start( ) {
 }
 
 function stop( ) {
+    # save the current ruleset
     $ipts > "$RULES_FILE"
-    log_success_msg "saved firewall ruleset"
+    # find all tables
+    local tables=$(iptables-save | sed -n 's_^\*\(.\+\)_\1_p')
+    # delete all rules in all tables and reset policies
+    for table in "$tables" ; do
+        iptables -t "$table" -F
+        iptables -t "$table" -X
+        iptables -t "$table" -Z
+        local chains=$(iptables-save -t "$table" | sed -n 's_^:\([^ \t]\+\).*_\1_p')
+        for chain in "$chains" ; do
+            iptables -t "$table" -P "$chain" ACCEPT
+        done
+    done
+}
+
+
+function locked( ) {
+    local _lockfile="$1"
+    shift
+    (
+      flock -x 99 || exit 1
+      eval "$*"
+    ) 99>$_lockfile
 }
 
 case "$1" in
     start)
-        start
+        locked $LOCKFILE  start
+        log_success_msg "iptables firewall started"
         ;;
     stop)
-        stop
+        locked $LOCKFILE  stop
+        log_success_msg "iptables firewall stopped"
         ;;
     restart)
-        stop
-        start       
+        locked $LOCKFILE  "stop ; start"
         ;;
     force-reload)
-        log_success_msg "force reload"
         ;;
     status)
-        log_success_msg "status"
         ;;
     generate)
-        generate
+        locked $LOCKFILE  "stop ; generate ; start"
         ;;
     *)
         echo "/etc/init.d/dfw start|stop|restart|force-reload|status|generate"
